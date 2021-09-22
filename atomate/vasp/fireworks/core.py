@@ -69,6 +69,7 @@ class OptimizeFW(Firework):
         auto_npar=">>auto_npar<<",
         half_kpts_first_relax=HALF_KPOINTS_FIRST_RELAX,
         parents=None,
+        vdw_kernel_dir=VDW_KERNEL_DIR,
         **kwargs,
     ):
         """
@@ -109,6 +110,13 @@ class OptimizeFW(Firework):
 
         t = []
         t.append(WriteVaspFromIOSet(structure=structure, vasp_input_set=vasp_input_set))
+        if vasp_input_set.vdw is not None:
+                # Copy the pre-compiled VdW kernel for VASP
+                t.append(
+                    CopyFiles(
+                        files_to_copy=["vdw_kernel.bindat"], from_dir=vdw_kernel_dir
+                    )
+                )
         t.append(
             RunVaspCustodian(
                 vasp_cmd=vasp_cmd,
@@ -121,6 +129,8 @@ class OptimizeFW(Firework):
         )
         t.append(PassCalcLocs(name=name))
         t.append(VaspToDb(db_file=db_file, additional_fields={"task_label": name}))
+        # Delete the VdW kernel
+        t.append(DeleteFiles(files=["vdw_kernel.bindat"]))
         super().__init__(
             t,
             parents=parents,
@@ -308,6 +318,8 @@ class StaticFW(Firework):
         vasptodb_kwargs=None,
         parents=None,
         spec_structure_key=None,
+        add_vdW_kernel_copy
+        vdw_kernel_dir=VDW_KERNEL_DIR,
         additional_files_from_prev_calc=[],
         **kwargs,
     ):
@@ -360,6 +372,13 @@ class StaticFW(Firework):
                 CopyVaspOutputs(calc_dir=prev_calc_dir, contcar_to_poscar=True,
                                 additional_files=additional_files_from_prev_calc))
             t.append(WriteVaspStaticFromPrev(other_params=vasp_input_set_params))
+            if vasp_input_set_params.get("vdw"):
+                # Copy the pre-compiled VdW kernel for VASP
+                t.append(
+                    CopyFiles(
+                        files_to_copy=["vdw_kernel.bindat"], from_dir=vdw_kernel_dir
+                    )
+                )
         elif parents:
             if prev_calc_loc:
                 t.append(
@@ -367,6 +386,13 @@ class StaticFW(Firework):
                                     additional_files=additional_files_from_prev_calc)
                 )
             t.append(WriteVaspStaticFromPrev(other_params=vasp_input_set_params))
+            if vasp_input_set_params.get("vdw"):
+                # Copy the pre-compiled VdW kernel for VASP
+                t.append(
+                    CopyFiles(
+                        files_to_copy=["vdw_kernel.bindat"], from_dir=vdw_kernel_dir
+                    )
+                )
         elif structure:
             vasp_input_set = vasp_input_set or MPStaticSet(
                 structure, **vasp_input_set_params
@@ -374,12 +400,21 @@ class StaticFW(Firework):
             t.append(
                 WriteVaspFromIOSet(structure=structure, vasp_input_set=vasp_input_set)
             )
+            if vasp_input_set.vdw:
+                # Copy the pre-compiled VdW kernel for VASP
+                t.append(
+                    CopyFiles(
+                        files_to_copy=["vdw_kernel.bindat"], from_dir=vdw_kernel_dir
+                    )
+                )
         else:
             raise ValueError("Must specify structure or previous calculation")
 
         t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<"))
         t.append(PassCalcLocs(name=name))
         t.append(VaspToDb(db_file=db_file, **vasptodb_kwargs))
+        # Delete the VdW kernel
+        t.append(DeleteFiles(files=["vdw_kernel.bindat"]))
         super().__init__(t, parents=parents, name=fw_name, **kwargs)
 
 
@@ -860,6 +895,7 @@ class TransmuterFW(Firework):
         db_file=DB_FILE,
         parents=None,
         override_default_vasp_params=None,
+        vdw_kernel_dir=VDW_KERNEL_DIR,
         **kwargs,
     ):
         """
@@ -928,7 +964,13 @@ class TransmuterFW(Firework):
             )
         else:
             raise ValueError("Must specify structure or previous calculation")
-
+        if vasp_input_set.vdw is not None:
+                # Copy the pre-compiled VdW kernel for VASP
+                t.append(
+                    CopyFiles(
+                        files_to_copy=["vdw_kernel.bindat"], from_dir=vdw_kernel_dir
+                    )
+                )
         t.append(RunVaspCustodian(vasp_cmd=vasp_cmd))
         t.append(PassCalcLocs(name=name))
         t.append(
@@ -943,6 +985,8 @@ class TransmuterFW(Firework):
                 },
             )
         )
+        # Delete the VdW kernel
+        t.append(DeleteFiles(files=["vdw_kernel.bindat"]))
 
         super().__init__(t, parents=parents, name=fw_name, **kwargs)
 
