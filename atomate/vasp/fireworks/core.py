@@ -318,7 +318,6 @@ class StaticFW(Firework):
         vasptodb_kwargs=None,
         parents=None,
         spec_structure_key=None,
-        add_vdW_kernel_copy
         vdw_kernel_dir=VDW_KERNEL_DIR,
         additional_files_from_prev_calc=[],
         **kwargs,
