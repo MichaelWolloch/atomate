@@ -318,7 +318,9 @@ class StaticFW(Firework):
         vasptodb_kwargs=None,
         parents=None,
         spec_structure_key=None,
+        add_vdW_kernel_copy
         vdw_kernel_dir=VDW_KERNEL_DIR,
+        additional_files_from_prev_calc=[],
         **kwargs,
     ):
         """
@@ -366,7 +368,9 @@ class StaticFW(Firework):
                 )
             )
         elif prev_calc_dir:
-            t.append(CopyVaspOutputs(calc_dir=prev_calc_dir, contcar_to_poscar=True))
+            t.append(
+                CopyVaspOutputs(calc_dir=prev_calc_dir, contcar_to_poscar=True,
+                                additional_files=additional_files_from_prev_calc))
             t.append(WriteVaspStaticFromPrev(other_params=vasp_input_set_params))
             if vasp_input_set_params.get("vdw"):
                 # Copy the pre-compiled VdW kernel for VASP
@@ -378,7 +382,8 @@ class StaticFW(Firework):
         elif parents:
             if prev_calc_loc:
                 t.append(
-                    CopyVaspOutputs(calc_loc=prev_calc_loc, contcar_to_poscar=True)
+                    CopyVaspOutputs(calc_loc=prev_calc_loc, contcar_to_poscar=True,
+                                    additional_files=additional_files_from_prev_calc)
                 )
             t.append(WriteVaspStaticFromPrev(other_params=vasp_input_set_params))
             if vasp_input_set_params.get("vdw"):
