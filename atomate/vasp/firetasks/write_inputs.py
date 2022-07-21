@@ -634,7 +634,7 @@ class WriteTransmutedStructureIOSet(FiretaskBase):
             t_cls = None
             for m in [
                 "advanced_transformations",
-                "defect_transformations",
+               # "defect_transformations",
                 "site_transformations",
                 "standard_transformations",
             ]:
