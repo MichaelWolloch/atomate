@@ -70,6 +70,9 @@ class OptimizeFW(Firework):
         half_kpts_first_relax=HALF_KPOINTS_FIRST_RELAX,
         parents=None,
         vdw_kernel_dir=VDW_KERNEL_DIR,
+        prev_calc_loc=False,
+        prev_calc_dir=None,
+        additional_files_from_prev_calc=[],
         **kwargs,
     ):
         """
@@ -91,6 +94,14 @@ class OptimizeFW(Firework):
             auto_npar (bool or str): whether to set auto_npar. defaults to env_chk: ">>auto_npar<<"
             half_kpts_first_relax (bool): whether to use half the kpoints for the first relaxation
             parents ([Firework]): Parents of this particular Firework.
+            vdw_kernel_dir (str): Place were the vdw kernel can be found and copied from.
+            prev_calc_loc (bool or str): If true (default), copies outputs from previous calc. If
+                a str value, retrieves a previous calculation output by name. If False/None, will create
+                new static calculation using the provided structure.
+            prev_calc_dir (str): Path to a previous calculation to copy from
+            additional_files_from_prev_calc (list o str): Copy additional files other than
+                POSCAR, POTCAR, KPOINTS, INCAR, vasprun.xml, like WAVECAR or CHGCAR.
+            
             **kwargs: Other kwargs that are passed to Firework.__init__.
         """
         override_default_vasp_params = override_default_vasp_params or {}
@@ -109,6 +120,19 @@ class OptimizeFW(Firework):
             )
 
         t = []
+        # copy files from a previous calculation. Useful e.g. for adding LDIPOL or other flags that
+        # profit from pre-relaxed orbitals. Note that we write the VASP files
+        # later, so actually the INCAR, POSCAR, POTCAR, KPOINTS can be overwritten!
+        if prev_calc_dir:
+            t.append(
+                CopyVaspOutputs(calc_dir=prev_calc_dir, contcar_to_poscar=True,
+                                additional_files=additional_files_from_prev_calc))
+        elif parents:
+            if prev_calc_loc:
+                t.append(
+                    CopyVaspOutputs(calc_loc=prev_calc_loc, contcar_to_poscar=True,
+                                    additional_files=additional_files_from_prev_calc)
+                ) 
         t.append(WriteVaspFromIOSet(structure=structure, vasp_input_set=vasp_input_set))
         if vasp_input_set.vdw is not None:
                 # Copy the pre-compiled VdW kernel for VASP
@@ -117,6 +141,7 @@ class OptimizeFW(Firework):
                         files_to_copy=["vdw_kernel.bindat"], from_dir=vdw_kernel_dir
                     )
                 )
+              
         t.append(
             RunVaspCustodian(
                 vasp_cmd=vasp_cmd,
@@ -341,6 +366,8 @@ class StaticFW(Firework):
             db_file (str): Path to file specifying db credentials.
             parents (Firework): Parents of this particular Firework. FW or list of FWS.
             vasptodb_kwargs (dict): kwargs to pass to VaspToDb
+            additional_files_from_prev_calc (list o str): Copy additional files other than
+                POSCAR, POTCAR, KPOINTS, INCAR, vasprun.xml, like WAVECAR or CHGCAR.
             **kwargs: Other kwargs that are passed to Firework.__init__.
         """
         t = []
