@@ -150,11 +150,7 @@ class CopyVaspOutputs(CopyFiles):
                 else:
                     raise ValueError(f"Cannot find file: {f}")
 
-            # copy the file (minus the relaxation extension)
-            print('***********************')
-            print(f'copying from: {prev_path_full + relax_ext + gz_ext}\n'
-                  f'        to:   {dest_path + gz_ext}')
-            print('***********************')
+            # copy the file (minus the relaxation extension)z
             self.fileclient.copy(
                 prev_path_full + relax_ext + gz_ext, dest_path + gz_ext
             )
