@@ -294,13 +294,15 @@ class ScanOptimizeFW(Firework):
             )
             # Update the INCAR for the PBESol GGA preconditioning step
             metagga_type = vasp_input_set.incar.get("METAGGA",
-                       vasp_input_set_params.get("METAGGA", "R2SCAN"))
+                       vasp_input_set_params.get("METAGGA", "R2scan"))
             pre_opt_settings = {"_set": {"GGA": "Ps", "EDIFFG": -0.05},
                                 "_unset": {"METAGGA": metagga_type}}
 
             # Disable vdW for the precondition step
             if vasp_input_set_params.get("vdw"):
-                pre_opt_settings.update({"_unset": {"LUSE_VDW": True, "BPARAM": 15.7}})
+                pre_opt_settings.update({"_unset": {"LUSE_VDW": True,
+                                                    "BPARAM": 15.7,
+                                                    "METAGGA": metagga_type}})
 
             t.append(ModifyIncar(incar_dictmod=pre_opt_settings))
 
