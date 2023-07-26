@@ -380,7 +380,7 @@ class StaticFW(Firework):
             vasptodb_kwargs["additional_fields"] = {}
         vasptodb_kwargs["additional_fields"]["task_label"] = name
 
-        formula = structure.composition.reduced_formula if structure else "unknown"
+        formula = structure.composition.reduced_formula if structure is not None else "unknown"
         fw_name = f"{formula}-{name}"
 
         if spec_structure_key is not None:
@@ -420,7 +420,7 @@ class StaticFW(Firework):
                         files_to_copy=["vdw_kernel.bindat"], from_dir=vdw_kernel_dir
                     )
                 )
-        elif structure:
+        elif structure is not None:
             vasp_input_set = vasp_input_set or MPStaticSet(
                 structure, **vasp_input_set_params
             )
