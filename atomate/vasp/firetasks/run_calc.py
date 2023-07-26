@@ -14,7 +14,7 @@ from custodian.vasp.handlers import (
     FrozenJobErrorHandler,
     IncorrectSmearingHandler,
     LargeSigmaHandler,
-    MaxForceErrorHandler,
+    # MaxForceErrorHandler, MaxForceErrorHandler has been removed from custodian
     MeshSymmetryErrorHandler,
     NonConvergingErrorHandler,
     PositiveEnergyErrorHandler,
@@ -100,7 +100,7 @@ class RunVaspCustodian(FiretaskBase):
     optional_params = [
         "job_type",
         "handler_group",
-        "max_force_threshold",
+        # "max_force_threshold", cannot longer be used because MaxForceErrorHandler has been removed from custodian
         "scratch_dir",
         "gzip_output",
         "max_errors",
@@ -267,10 +267,11 @@ class RunVaspCustodian(FiretaskBase):
         else:
             handlers = handler_group
 
-        if self.get("max_force_threshold"):
-            handlers.append(
-                MaxForceErrorHandler(max_force_threshold=self["max_force_threshold"])
-            )
+        # MaxForceErrorHandler has been removed from custodian.
+        # if self.get("max_force_threshold"):
+        #     handlers.append(
+        #         MaxForceErrorHandler(max_force_threshold=self["max_force_threshold"])
+        #     )
 
         if self.get("wall_time"):
             handlers.append(WalltimeHandler(wall_time=self["wall_time"]))

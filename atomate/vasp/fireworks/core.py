@@ -144,7 +144,7 @@ class OptimizeFW(Firework):
             RunVaspCustodian(
                 vasp_cmd=vasp_cmd,
                 job_type=job_type,
-                max_force_threshold=max_force_threshold,
+                #max_force_threshold=max_force_threshold,
                 ediffg=ediffg,
                 auto_npar=auto_npar,
                 half_kpts_first_relax=half_kpts_first_relax,
