@@ -7,7 +7,7 @@ from __future__ import annotations
 import warnings
 from typing import Any
 
-from fireworks import Firework
+from fireworks import Firework, FileTransferTask
 from pymatgen.core import Structure
 from pymatgen.io.vasp.sets import (
     MITMDSet,
@@ -1022,6 +1022,7 @@ class MDFW(Firework):
         db_file=DB_FILE,
         parents=None,
         copy_vasp_outputs=True,
+        additional_files_from_prev_calc=["CHGCAR"],
         **kwargs,
     ):
         """
@@ -1060,7 +1061,21 @@ class MDFW(Firework):
         if copy_vasp_outputs:
             t.append(
                 CopyVaspOutputs(
-                    calc_loc=True, additional_files=["CHGCAR"], contcar_to_poscar=True
+                    calc_loc=True, additional_files=additional_files_from_prev_calc, contcar_to_poscar=True
+                )
+            )
+
+        if "ML_ABN" in additional_files_from_prev_calc:
+            t.append(
+                FileTransferTask(
+                    {
+                        "files":
+                            [
+                             {"src": "./ML_ABN"},
+                             {"dest": "./ML_AB"},
+                            ],
+                        "mode": "move",
+                    }
                 )
             )
 
