@@ -1023,7 +1023,7 @@ class MDFW(Firework):
         parents=None,
         copy_vasp_outputs=True,
         additional_files_from_prev_calc=["CHGCAR"],
-        vasptodb_kwargs=None,
+        vasptodb_kwargs={},
         **kwargs,
     ):
         """
