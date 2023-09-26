@@ -1023,6 +1023,7 @@ class MDFW(Firework):
         parents=None,
         copy_vasp_outputs=True,
         additional_files_from_prev_calc=["CHGCAR"],
+        vasptodb_kwargs=None,
         **kwargs,
     ):
         """
@@ -1094,6 +1095,7 @@ class MDFW(Firework):
                 db_file=db_file,
                 additional_fields={"task_label": name},
                 defuse_unsuccessful=False,
+                **vasptodb_kwargs,
             )
         )
         super().__init__(
