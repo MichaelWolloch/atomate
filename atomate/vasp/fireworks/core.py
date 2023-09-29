@@ -98,7 +98,7 @@ class OptimizeFW(Firework):
             prev_calc_dir (str): Path to a previous calculation to copy from
             additional_files_from_prev_calc (list o str): Copy additional files other than
                 POSCAR, POTCAR, KPOINTS, INCAR, vasprun.xml, like WAVECAR or CHGCAR.
-            
+
             **kwargs: Other kwargs that are passed to Firework.__init__.
         """
         override_default_vasp_params = override_default_vasp_params or {}
@@ -120,23 +120,28 @@ class OptimizeFW(Firework):
         # later, so actually the INCAR, POSCAR, POTCAR, KPOINTS can be overwritten!
         if prev_calc_dir:
             t.append(
-                CopyVaspOutputs(calc_dir=prev_calc_dir, contcar_to_poscar=True,
-                                additional_files=additional_files_from_prev_calc))
+                CopyVaspOutputs(
+                    calc_dir=prev_calc_dir,
+                    contcar_to_poscar=True,
+                    additional_files=additional_files_from_prev_calc,
+                )
+            )
         elif parents:
             if prev_calc_loc:
                 t.append(
-                    CopyVaspOutputs(calc_loc=prev_calc_loc, contcar_to_poscar=True,
-                                    additional_files=additional_files_from_prev_calc)
-                ) 
-        t.append(WriteVaspFromIOSet(structure=structure, vasp_input_set=vasp_input_set))
-        if vasp_input_set.vdw is not None:
-                # Copy the pre-compiled VdW kernel for VASP
-                t.append(
-                    CopyFiles(
-                        files_to_copy=["vdw_kernel.bindat"], from_dir=vdw_kernel_dir
+                    CopyVaspOutputs(
+                        calc_loc=prev_calc_loc,
+                        contcar_to_poscar=True,
+                        additional_files=additional_files_from_prev_calc,
                     )
                 )
-              
+        t.append(WriteVaspFromIOSet(structure=structure, vasp_input_set=vasp_input_set))
+        if vasp_input_set.vdw is not None:
+            # Copy the pre-compiled VdW kernel for VASP
+            t.append(
+                CopyFiles(files_to_copy=["vdw_kernel.bindat"], from_dir=vdw_kernel_dir)
+            )
+
         t.append(
             RunVaspCustodian(
                 vasp_cmd=vasp_cmd,
@@ -289,16 +294,25 @@ class ScanOptimizeFW(Firework):
                 WriteVaspFromIOSet(structure=structure, vasp_input_set=vasp_input_set)
             )
             # Update the INCAR for the PBESol GGA preconditioning step
-            metagga_type = vasp_input_set.incar.get("METAGGA",
-                       vasp_input_set_params.get("METAGGA", "R2scan"))
-            pre_opt_settings = {"_set": {"GGA": "Ps", "EDIFFG": -0.05},
-                                "_unset": {"METAGGA": metagga_type}}
+            metagga_type = vasp_input_set.incar.get(
+                "METAGGA", vasp_input_set_params.get("METAGGA", "R2scan")
+            )
+            pre_opt_settings = {
+                "_set": {"GGA": "Ps", "EDIFFG": -0.05},
+                "_unset": {"METAGGA": metagga_type},
+            }
 
             # Disable vdW for the precondition step
             if vasp_input_set_params.get("vdw"):
-                pre_opt_settings.update({"_unset": {"LUSE_VDW": True,
-                                                    "BPARAM": 11.95,
-                                                    "METAGGA": metagga_type}})
+                pre_opt_settings.update(
+                    {
+                        "_unset": {
+                            "LUSE_VDW": True,
+                            "BPARAM": 11.95,
+                            "METAGGA": metagga_type,
+                        }
+                    }
+                )
 
             t.append(ModifyIncar(incar_dictmod=pre_opt_settings))
 
@@ -376,7 +390,11 @@ class StaticFW(Firework):
             vasptodb_kwargs["additional_fields"] = {}
         vasptodb_kwargs["additional_fields"]["task_label"] = name
 
-        formula = structure.composition.reduced_formula if structure is not None else "unknown"
+        formula = (
+            structure.composition.reduced_formula
+            if structure is not None
+            else "unknown"
+        )
         fw_name = f"{formula}-{name}"
 
         if spec_structure_key is not None:
@@ -392,8 +410,12 @@ class StaticFW(Firework):
             )
         elif prev_calc_dir:
             t.append(
-                CopyVaspOutputs(calc_dir=prev_calc_dir, contcar_to_poscar=True,
-                                additional_files=additional_files_from_prev_calc))
+                CopyVaspOutputs(
+                    calc_dir=prev_calc_dir,
+                    contcar_to_poscar=True,
+                    additional_files=additional_files_from_prev_calc,
+                )
+            )
             t.append(WriteVaspStaticFromPrev(other_params=vasp_input_set_params))
             if vasp_input_set_params.get("vdw"):
                 # Copy the pre-compiled VdW kernel for VASP
@@ -405,8 +427,11 @@ class StaticFW(Firework):
         elif parents:
             if prev_calc_loc:
                 t.append(
-                    CopyVaspOutputs(calc_loc=prev_calc_loc, contcar_to_poscar=True,
-                                    additional_files=additional_files_from_prev_calc)
+                    CopyVaspOutputs(
+                        calc_loc=prev_calc_loc,
+                        contcar_to_poscar=True,
+                        additional_files=additional_files_from_prev_calc,
+                    )
                 )
             t.append(WriteVaspStaticFromPrev(other_params=vasp_input_set_params))
             if vasp_input_set_params.get("vdw"):
@@ -981,12 +1006,10 @@ class TransmuterFW(Firework):
         else:
             raise ValueError("Must specify structure or previous calculation")
         if vasp_input_set.vdw is not None:
-                # Copy the pre-compiled VdW kernel for VASP
-                t.append(
-                    CopyFiles(
-                        files_to_copy=["vdw_kernel.bindat"], from_dir=vdw_kernel_dir
-                    )
-                )
+            # Copy the pre-compiled VdW kernel for VASP
+            t.append(
+                CopyFiles(files_to_copy=["vdw_kernel.bindat"], from_dir=vdw_kernel_dir)
+            )
         t.append(RunVaspCustodian(vasp_cmd=vasp_cmd))
         t.append(PassCalcLocs(name=name))
         t.append(
@@ -1062,7 +1085,9 @@ class MDFW(Firework):
         if copy_vasp_outputs:
             t.append(
                 CopyVaspOutputs(
-                    calc_loc=True, additional_files=additional_files_from_prev_calc, contcar_to_poscar=True
+                    calc_loc=True,
+                    additional_files=additional_files_from_prev_calc,
+                    contcar_to_poscar=True,
                 )
             )
 
@@ -1070,11 +1095,9 @@ class MDFW(Firework):
             t.append(
                 FileTransferTask(
                     {
-                        "files":
-                            [
-                             {"src": "./ML_ABN"},
-                             {"dest": "./ML_AB"},
-                            ],
+                        "files": [
+                            {"src": "./ML_ABN", "dest": "./ML_AB"},
+                        ],
                         "mode": "move",
                     }
                 )
