@@ -524,7 +524,7 @@ class VaspDrone(AbstractDrone):
                 d["output"]["is_metal"] = None
                 d["output"]["direct_gap"] = None
             else:
-                logger.warning("Error in parsing bandstructure. Still doing this")
+                logger.warning("Error in parsing bandstructure.")
                 if vrun.incar["IBRION"] == 1:
                     logger.warning(
                         "Vasp doesn't properly output efermi for IBRION == 1"
@@ -557,8 +557,7 @@ class VaspDrone(AbstractDrone):
                 )
                 d["output"]["eigenvalue_band_properties"] = None
             else:
-                print("I have reloaded the file"
-                logger.warning("Error in parsing eigenvalue band properties. did i catch this?")
+                logger.warning("Error in parsing eigenvalue band properties.")
 
         # store run name and location ,e.g. relax1, relax2, etc.
         d["task"] = {"type": taskname, "name": taskname}
