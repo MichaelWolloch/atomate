@@ -512,18 +512,32 @@ class VaspDrone(AbstractDrone):
                 d["output"]["transition"] = bs_gap["transition"]
 
         except Exception:
-            logger.warning("Error in parsing bandstructure")
-            if vrun.incar["IBRION"] == 1:
-                logger.warning("Vasp doesn't properly output efermi for IBRION == 1")
-            if self.bandstructure_mode is True:
-                logger.error(traceback.format_exc())
-                logger.error(
-                    "Error in "
-                    + os.path.abspath(dir_name)
-                    + ".\n"
-                    + traceback.format_exc()
+            if vrun.incar.get("ML_LMLFF", False):
+                logger.warning(
+                    "VASP doesn't properly output band structure data for machine learned force fields\n"
+                    "<output.bandgap>, <output.vbm>, <output.cbm>, <output.is_gap_direct>, <output.is_metal>, and <output.direct_gap> will be set to None"
                 )
-                raise
+                d["output"]["bandgap"] = None
+                d["output"]["vbm"] = None
+                d["output"]["cbm"] = None
+                d["output"]["is_gap_direct"] = None
+                d["output"]["is_metal"] = None
+                d["output"]["direct_gap"] = None
+            else:
+                logger.warning("Error in parsing bandstructure. Still doing this")
+                if vrun.incar["IBRION"] == 1:
+                    logger.warning(
+                        "Vasp doesn't properly output efermi for IBRION == 1"
+                    )
+                if self.bandstructure_mode is True:
+                    logger.error(traceback.format_exc())
+                    logger.error(
+                        "Error in "
+                        + os.path.abspath(dir_name)
+                        + ".\n"
+                        + traceback.format_exc()
+                    )
+                    raise
 
         # Should roughly agree with information from .get_band_structure() above, subject to tolerances
         # If there is disagreement, it may be related to VASP incorrectly assigning the Fermi level
@@ -536,7 +550,15 @@ class VaspDrone(AbstractDrone):
                 "is_gap_direct": band_props[3],
             }
         except Exception:
-            logger.warning("Error in parsing eigenvalue band properties")
+            if vrun.incar.get("ML_LMLFF", False):
+                logger.warning(
+                    "VASP doesn't properly output eigenvalue band properties for machine learned force fields\n"
+                    "<output.eigenvalue_band_properties> will be set to None"
+                )
+                d["output"]["eigenvalue_band_properties"] = None
+            else:
+                print("I have reloaded the file"
+                logger.warning("Error in parsing eigenvalue band properties. did i catch this?")
 
         # store run name and location ,e.g. relax1, relax2, etc.
         d["task"] = {"type": taskname, "name": taskname}
@@ -598,7 +620,6 @@ class VaspDrone(AbstractDrone):
         return d
 
     def process_bandstructure(self, vrun):
-
         vasprun_file = vrun.filename
         # Band structure parsing logic
         if str(self.bandstructure_mode).lower() == "auto":
@@ -689,7 +710,6 @@ class VaspDrone(AbstractDrone):
         max_force = None
         calc = d["calcs_reversed"][0]
         if d["state"] == "successful":
-
             # calculate max forces
             if "forces" in calc["output"]["ionic_steps"][-1]:
                 forces = np.array(calc["output"]["ionic_steps"][-1]["forces"])
@@ -701,7 +721,6 @@ class VaspDrone(AbstractDrone):
                 max_force = max(np.linalg.norm(forces, axis=1))
 
             if calc["input"]["parameters"].get("NSW", 0) > 0:
-
                 drift = calc["output"]["outcar"].get("drift", [[0, 0, 0]])
                 max_drift = max(np.linalg.norm(d) for d in drift)
                 ediffg = calc["input"]["parameters"].get("EDIFFG", None)
